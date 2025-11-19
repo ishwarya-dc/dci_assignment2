@@ -1,37 +1,20 @@
 steps:
-  # Step 1: Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build', 
-      '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:latest',
-      '.'
-    ]
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:v1', '.']
+    dir: 'flask-app'
 
-  # Step 2: Push to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'push', 'us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:latest'
-    ]
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:v1']
 
-  # Step 3: Update metadata on VM (Redeploy container)
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       [
-        "compute", "instances", "add-metadata", "backend-instance",
-        "--zone=us-central1-a",
-        "--metadata", "gce-container-declaration=spec:
-  containers:
-  - name: flask-backend
-    image: us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:latest
-    env:
-    - name: PORT
-      value: \"5000\"
-    ports:
-    - containerPort: 5000
-      hostPort: 5000
-  restartPolicy: Always"
+        'compute',
+        'instances',
+        'add-metadata',
+        'backend-ubuntu',
+        '--zone=us-central1-a',
+        '--metadata',
+        'gce-container-declaration={"spec": {"containers": [{"image": "us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:v1", "env": [{"name": "PORT", "value": "5000"}]}]}}',
       ]
-
-options:
-  logging: CLOUD_LOGGING_ONLY
 
