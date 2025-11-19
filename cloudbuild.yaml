@@ -1,20 +1,33 @@
 steps:
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:v1', '.']
-    dir: 'flask-app'
-
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:v1']
-
-  - name: 'gcr.io/cloud-builders/gcloud'
+  - name: "gcr.io/cloud-builders/docker"
     args:
       [
-        'compute',
-        'instances',
-        'add-metadata',
-        'backend-ubuntu',
-        '--zone=us-central1-a',
-        '--metadata',
-        'gce-container-declaration={"spec": {"containers": [{"image": "us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:v1", "env": [{"name": "PORT", "value": "5000"}]}]}}',
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:$COMMIT_SHA",
+        "."
+      ]
+    dir: "flask-app"
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:$COMMIT_SHA"
       ]
 
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      [
+        "compute",
+        "instances",
+        "add-metadata",
+        "backend-ubuntu",
+        "--zone",
+        "us-central1-a",
+        "--metadata",
+        "gce-container-declaration=spec:\n  containers:\n    - name: flask-backend\n      image: us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:$COMMIT_SHA\n  restartPolicy: Always"
+      ]
+
+images:
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:$COMMIT_SHA"
