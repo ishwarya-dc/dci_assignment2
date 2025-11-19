@@ -1,4 +1,5 @@
 steps:
+  # Step 1: Build Docker image
   - name: "gcr.io/cloud-builders/docker"
     args:
       [
@@ -9,6 +10,7 @@ steps:
       ]
     dir: "flask-app"
 
+  # Step 2: Push Docker image
   - name: "gcr.io/cloud-builders/docker"
     args:
       [
@@ -16,6 +18,7 @@ steps:
         "us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:$COMMIT_SHA"
       ]
 
+  # Step 3: Update metadata on Compute Engine VM
   - name: "gcr.io/cloud-builders/gcloud"
     args:
       [
@@ -26,7 +29,15 @@ steps:
         "--zone",
         "us-central1-a",
         "--metadata",
-        "gce-container-declaration=spec:\n  containers:\n    - name: flask-backend\n      image: us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:$COMMIT_SHA\n  restartPolicy: Always"
+        "gce-container-declaration=\
+spec:\n\
+  containers:\n\
+    - name: flask-backend\n\
+      image: us-central1-docker.pkg.dev/$PROJECT_ID/backend-repo/flask-backend:$COMMIT_SHA\n\
+      env:\n\
+        - name: PORT\n\
+          value: \"5000\"\n\
+restartPolicy: Always"
       ]
 
 images:
